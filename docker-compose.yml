@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  llm_scriptwriter:
+    image: huggingface/transformers
+    command: ["python", "generate_script.py"]
+    volumes:
+      - ./scripts:/app/scripts
+    environment:
+      - MODEL_NAME=Llama-3
+
+  ai_voiceover:
+    image: coqui-ai/tts
+    command: ["python", "text_to_speech.py"]
+    volumes:
+      - ./audio:/app/audio
+
+  video_creator:
+    image: stable-diffusion/video-gen
+    command: ["python", "generate_video.py"]
+    volumes:
+      - ./videos:/app/videos
+
+  video_editor:
+    image: whisper-ai/editor
+    command: ["python", "edit_video.py"]
+    volumes:
+      - ./videos:/app/videos
+
+  youtube_uploader:
+    image: python:3.10
+    command: ["python", "upload_to_youtube.py"]
+    volumes:
+      - ./videos:/app/videos
+    environment:
+      - YOUTUBE_API_KEY=${YOUTUBE_API_KEY}
+
+  api_backend:
+    image: tiangolo/uvicorn-gunicorn-fastapi:python3.10
+    command: ["python", "main.py"]
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: node:18
+    working_dir: /app
+    command: ["npm", "run", "dev"]
+    volumes:
+      - ./frontend:/app
+    ports:
+      - "3000:3000"
+
+volumes:
+  scripts:
+  audio:
+  videos:
+  backend:
+  frontend:
